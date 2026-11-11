@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Huochen // Code Station</title>
+<meta name="description" content="Editor de código gratuito com estética Y2K: 30+ linguagens, Pomodoro, player de YouTube/Spotify, calculadora, dashboards e salvamento no GitHub Gist.">
+<meta name="theme-color" content="#07090f">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Huochen // Code Station">
+<meta property="og:description" content="Editor de código online, gratuito, com visual Y2K.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💾</text></svg>">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -278,7 +285,7 @@ textarea.in{background:var(--bg);border:1px solid var(--line);color:var(--text);
 
   <header>
     <div class="orb"></div>
-    <div class="logo">HUOCHEN//<span style="color:var(--b)">CODE</span><small>STATION v5</small></div>
+    <div class="logo">HUOCHEN//<span style="color:var(--b)">CODE</span><small>STATION v9</small></div>
     <div class="ticker"><span>★ Bem-vindo à Code Station ★ Ctrl+Enter executa ★ Ctrl+S salva no disco (Chrome/Edge) ou baixa ★ Ctrl+Shift+S salva tudo ★ Abra uma pasta inteira ou um .zip ★ Arraste arquivos para abrir ★ F1 abre a paleta de comandos ★ Pomodoro e player de YouTube/Spotify no painel ♫ ★</span></div>
     <div id="clock">--:--:--</div>
   </header>
@@ -493,6 +500,8 @@ textarea.in{background:var(--bg);border:1px solid var(--line);color:var(--text);
         <div class="chips">
           <button class="btn sm" id="bReset">Projeto de exemplo</button>
           <button class="btn sm" id="bPrev">Restaurar anterior</button>
+          <button class="btn sm" id="bkOut" title="Baixar backup de tudo (projeto, snippets, histórico, dashboards)">⇩ Backup</button>
+          <button class="btn sm" id="bkIn" title="Restaurar um backup">⇧ Restaurar backup</button><input type="file" id="bkFile" accept=".json,application/json" hidden>
         </div>
       </div>
 
@@ -1634,10 +1643,11 @@ let dip = null;
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); dip = e; });
 addEventListener('appinstalled', () => unlock('pwa'));
 $('#pwaInst').onclick = () => { if (!dip) return toast('Instalação indisponível aqui: hospede o arquivo em https e abra no Chrome/Edge (no iPhone: Compartilhar → Adicionar à Tela de Início)'); dip.prompt(); dip = null; };
-$('#pwaSw').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([SW_SRC], {type:'text/javascript'})); a.download = 'sw.js'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); };
+$('#pwaSw').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([SW_NEW], {type:'text/javascript'})); a.download = 'sw.js'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); };
 (() => {
   const st = t => { $('#pwaState').textContent = t; };
   try {
+    if (document.querySelector('link[rel=manifest]')) throw 0;
     const l = document.createElement('link'); l.rel = 'manifest';
     l.href = URL.createObjectURL(new Blob([JSON.stringify({name:'Huochen Code Station', short_name:'Huochen', start_url:location.href.split('#')[0], display:'standalone', background_color:'#07090f', theme_color:'#00ff9d', icons:[{src:ICON, sizes:'any', type:'image/svg+xml', purpose:'any'}]})], {type:'application/manifest+json'}));
     document.head.appendChild(l);
@@ -1989,6 +1999,42 @@ $('#dxExport').onclick = () => {
   addFile('dashboard.html', 'html', '<!DOCTYPE html>\n<html lang="pt-BR"><head><meta charset="UTF-8"><title>Dashboard</title><style>' + css + '</style></head>\n<body><h1>Dashboard</h1>\n<div class="g">' + $('#dxGrid').innerHTML + '</div></body></html>');
   $('#dashDlg').close(); toast('dashboard.html criado no projeto — aperte Ctrl+Enter para ver');
 };
+
+/* ---------- v10: backup, acessibilidade, service worker novo ---------- */
+const SW_NEW = `const C = 'huochen-v10';
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => clients.claim())));
+self.addEventListener('fetch', e => {
+  const q = e.request; if (q.method !== 'GET' || !q.url.startsWith('http')) return;
+  e.respondWith(caches.open(C).then(async c => {
+    if (q.mode === 'navigate'){ try { const r = await fetch(q); c.put(q, r.clone()); return r; } catch { return (await c.match(q)) || (await c.match('/')) || Response.error(); } }
+    const hit = await c.match(q);
+    const net = fetch(q).then(r => { if (r && (r.status === 200 || r.type === 'opaque')) c.put(q, r.clone()); return r; }).catch(() => hit);
+    return hit || net;
+  }));
+});
+`;
+$$('button[title]').forEach(b => { if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', b.title); });
+function bkExport(){
+  const o = {};
+  try { for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k.startsWith('huochen') && k !== 'huochen.ghtok') o[k] = localStorage.getItem(k); } } catch { return toast('Sem acesso ao armazenamento do navegador'); }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({app:'huochen', v:1, data:o})], {type:'application/json'}));
+  a.download = 'huochen-backup-' + dk() + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); toast('Backup baixado (o token do GitHub não vai junto)');
+}
+function bkImport(file){
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const j = JSON.parse(r.result); if (j.app !== 'huochen' || !j.data) throw 0;
+      if (!confirm('Restaurar o backup substitui seus dados atuais (projeto, snippets, histórico, dashboards). Continuar?')) return;
+      Object.entries(j.data).forEach(([k, v]) => { if (k.startsWith('huochen') && k !== 'huochen.ghtok') localStorage.setItem(k, v); });
+      location.reload();
+    } catch { toast('Arquivo de backup inválido'); }
+  };
+  r.readAsText(file);
+}
+$('#bkOut').onclick = bkExport; $('#bkIn').onclick = () => $('#bkFile').click();
+$('#bkFile').onchange = e => { if (e.target.files[0]) bkImport(e.target.files[0]); e.target.value = ''; };
 
 /* ---------- Config UI ---------- */
 function buildConfigUI(){

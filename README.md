@@ -1,22 +1,12 @@
-# Huochen Code Station — publicar no Vercel
+# Huochen Code Station — arquivos para o Vercel
 
-Site estático: não precisa de build. Arquivos: `index.html` (o editor), `sw.js` (modo offline) e `vercel.json`.
+Site estático (sem build). Arquivos, todos na RAIZ do repositório:
+`index.html`, `sw.js`, `manifest.webmanifest`, `icon-192.png`, `icon-512.png`, `vercel.json`.
 
-## Opção A — pelo site (GitHub)
-1. Crie um repositório no GitHub e envie os 3 arquivos (Add file → Upload files).
-2. Em vercel.com/new, entre com a conta do GitHub e importe o repositório.
-3. Framework Preset: **Other**. Deixe Build Command e Output Directory vazios. Clique em **Deploy**.
-4. Pronto: você ganha um endereço `https://seu-projeto.vercel.app`.
+## Como atualizar um site que já está no ar
+No GitHub, abra o repositório → Add file → Upload files → envie estes arquivos
+(eles substituem os antigos) → Commit changes. O Vercel publica sozinho em ~1 minuto.
 
-## Opção B — pelo terminal
-```
-npm i -g vercel
-cd huochen-vercel
-vercel --prod
-```
-(responda às perguntas; no framework escolha "Other").
-
-## Depois de publicar
-- O YouTube/Spotify, o Python (Pyodide) e a execução remota passam a funcionar (precisam de https e internet).
-- Abra o endereço no celular e use "Adicionar à Tela de Início" para instalar como app.
-- Atualizar o editor = substituir o `index.html` e fazer novo deploy (o `git push` já dispara sozinho).
+## Primeira publicação
+Veja o passo a passo: GitHub (repositório + upload) → vercel.com/new → Import →
+Framework Preset "Other", build vazio → Deploy.
